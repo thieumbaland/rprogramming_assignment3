@@ -1,4 +1,4 @@
-best=function(state,outcome){
+rankall=function(outcome,num="best"){
   library(readr)
   library(plyr)
   ## Read outcome data
@@ -16,17 +16,28 @@ best=function(state,outcome){
   my_outcome<-my_outcome[!is.na(my_outcome[,my_column]),]
   my_outcome<-my_outcome[-which(my_outcome[,my_column]=="Not Available"),]
   my_outcome[,my_column]<-as.numeric(my_outcome[,my_column])
-  outcome.state<-my_outcome[my_outcome$State==state,]
-  ordered.outcome.state<-outcome.state[order(outcome.state[,my_column],outcome.state[,2]),]
   
-  return(ordered.outcome.state[1,2])
+  sorted_states<-sort(my_outcome$State)
+  df<-{}
+  for(i in 1:length(unique(sorted_states))){
+    small.outcome<-my_outcome[my_outcome$State==unique(sorted_states)[i],]
+    ordered.small.outcome<-small.outcome[order(small.outcome[,my_column],small.outcome[,2]),]
+    
+    if(!is.character(num) & num>nrow(ordered.small.outcome)){
+      rowval<-NA
+    }else{
+      myrow<-ifelse(num=="best",1,ifelse(num=="worst",nrow(ordered.small.outcome),num))
+      rowval<-ordered.small.outcome[myrow,2]
+    }
+    df<-rbind(df,c(rowval,unique(sorted_states)[i]))
+  }
+  colnames(df)<-c("hospital","state")
+  
+  return(as.data.frame(df))
 }
 
 test=function(){
-  best("TX","heart attack")
-  best("TX","heart failure")
-  best("MD","heart attack")
-  best("MD","pneumonia")
-  best("BB","heart attack")
-  best("NY","hert attack")
+  head(rankall("heart attack",20),10)
+  tail(rankall("pneumonia","worst"),3)
+  tail(rankall("heart failure"),10)
 }
